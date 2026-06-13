@@ -1,4 +1,4 @@
-# Bond Analytics Engine
+# Fixed Income Tool
 
 A lightweight Python tool for fixed income analytics. Given a bond's basic characteristics and current market price, it computes the **yield to maturity (YTM)**, **modified duration**, **convexity**, and their associated **price sensitivity estimates** — with exact time-to-maturity calculated from the current date.
 
