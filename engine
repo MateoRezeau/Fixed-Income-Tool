@@ -1,0 +1,71 @@
+import numpy as np
+from scipy import optimize
+from datetime import datetime
+
+class Bond:
+    def __init__(self, facev, couponr, frequency, maturity_str):
+        self.facev = facev
+        self.couponr = couponr / 100
+        self.frequency = frequency
+        today = datetime.now()
+        maturity_date = datetime.strptime(maturity_str, "%d/%m/%Y")
+        self.maturity_years = (maturity_date - today).days / 365.25
+        self.coupon = (self.couponr * facev) / frequency
+        self.periods = int(self.maturity_years * frequency)
+
+    def price(self, ytm):
+        periods = np.arange(1, self.periods + 1)
+        discount = (1 + ytm / self.frequency) ** periods
+        pv_coupons = np.sum(self.coupon / discount)
+        pv_facev = self.facev / ((1 + ytm / self.frequency) ** self.periods)
+        return pv_coupons + pv_facev
+    
+    def get_ytm(self, market_price):
+        func = lambda ytm: self.price(ytm) - market_price
+        return optimize.newton(func, 0.05)
+    
+    def moddur (self, ytm):
+        periods = np.arange(1, self.periods + 1)
+        discount = (1 + ytm / self.frequency)
+        cf = np.full(self.periods, self.coupon)
+        cf[-1] += self.facev
+        pv_cf = cf / ((1 + ytm / self.frequency) ** periods)
+        weighted_times = (periods / self.frequency) * pv_cf
+        macdur = np.sum(weighted_times) / self.price(ytm)
+        mod_duration = macdur / (1 + ytm / self.frequency)
+        return mod_duration
+    
+    def convexity(self, ytm):
+        periods = np.arange(1, self.periods + 1)
+        cf = np.full(self.periods, self.coupon)
+        cf[-1] += self.facev
+        pv_cf = cf / ((1 + ytm / self.frequency) ** periods)
+        t = periods / self.frequency
+        conv = np.sum(pv_cf * (t**2 + t)) / (self.price(ytm) * (1 + ytm / self.frequency)**2)
+        return conv
+
+def run():
+    print("--- Fixed Income Analytics: YTM Solving ---")
+    face = float(input("Face value: "))
+    couponr = float(input("Coupon rate (%): "))
+    frequency = int(input("Compounding frequency (/year): "))
+    maturity = input("Maturity date (DD/MM/YYYY): ")
+    price = float(input("Current market price (%): "))
+
+    bond = Bond(face, couponr, frequency, maturity)
+    ytm = bond.get_ytm(price)
+    moddur = bond.moddur(ytm)
+    conv = bond.convexity(ytm)
+
+    dy = 0.01
+    conv_price = (-moddur * dy) + (0.5 * conv * (dy ** 2))
+
+    print(f"\nCalculated YTM: {ytm:.2%}")
+    print(f"Time to maturity: {bond.maturity_years:.2f} years")
+    print(f"Modified duration: {moddur:.2f}")
+    print(f"Price change for 100bps (1%) shift: {moddur/100:.2%}")
+    print(f"Convexity: {conv:.2f}")
+    print(f"Accurate price change for 100bps (1%) shift: {conv_price:.2%}")
+
+if __name__ == "__main__":
+    run()
