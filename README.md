@@ -6,7 +6,7 @@ A lightweight Python tool for fixed income analytics. Given a bond's basic chara
 
 ## Features
 
-- YTM solving via Newton-Raphson root-finding (SciPy)
+- YTM solving
 - Exact time-to-maturity from today's date
 - Macaulay and Modified Duration
 - Convexity
@@ -23,7 +23,7 @@ A lightweight Python tool for fixed income analytics. Given a bond's basic chara
 Install dependencies:
 
 ```bash
-pip install numpy scipy
+pip install requirements.txt
 ```
 
 ---
